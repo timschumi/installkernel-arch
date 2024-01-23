@@ -1,0 +1,25 @@
+#!/bin/sh -eu
+
+version="${1}"
+image="${2}"
+system_map="${3}"
+if [ $# -ge 4 ]; then
+    path="${4}"
+else
+    path="/boot"
+fi
+
+# Move files to the correct locations
+install -m 0600 "${image}" "${path}/vmlinuz-${version}"
+install -m 0600 "${system_map}" "${path}/System.map-${version}"
+
+# Generate a new initramfs
+mkinitcpio --generate "${path}/initramfs-${version}.img" --kernel "${version}"
+
+# Update the bootloader configuration
+if [ -f /boot/grub/grub.cfg ]; then
+    grub-mkconfig -o /boot/grub/grub.cfg
+else
+    >&2 echo "error: Could not determine which bootloader to update"
+    exit 1
+fi
